@@ -17,8 +17,8 @@ class NodeCreate(BaseModel):
     type: str
     name: str
     provider: str | None = None
-    native_type: str | None = None
-    native_id: str | None = None
+    provider_type: str | None = None
+    provider_id: str | None = None
     region: str | None = None
     attrs: dict[str, Any] = Field(default_factory=dict)
     native: dict[str, Any] = Field(default_factory=dict)
@@ -28,8 +28,8 @@ class NodeCreate(BaseModel):
 
 class NodeUpdate(BaseModel):
     name: str | None = None
-    native_type: str | None = None
-    native_id: str | None = None
+    provider_type: str | None = None
+    provider_id: str | None = None
     region: str | None = None
     attrs: dict[str, Any] | None = None
     native: dict[str, Any] | None = None

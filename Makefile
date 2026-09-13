@@ -1,4 +1,4 @@
-.PHONY: help install run run-fg run-stop test lint fmt db-up db-down db-nuke db-ui
+.PHONY: help install run run-fg run-stop test lint fmt db-up db-down db-nuke db-ui db-test-up
 
 # local overrides (copied from .env.default; gitignored); exported so the API,
 # tests and compose all see the same values
@@ -37,7 +37,7 @@ run-stop:       ## stop the background API
 		echo "no background API to stop"; \
 	fi; rm -f sandbox/cbx-core.pid
 
-test: db-up     ## run all tests
+test: db-test-up  ## run all tests against the separate test Neo4j
 	uv run pytest
 
 lint:           ## ruff check and format check
@@ -51,11 +51,14 @@ fmt:            ## ruff format and autofix
 db-up:          ## start Neo4j in a container and wait until healthy
 	docker compose up -d --wait neo4j
 
-db-down:        ## stop the container (data volume survives)
-	docker compose down
+db-test-up:     ## start the test Neo4j (no volume) and wait until healthy
+	docker compose --profile test up -d --wait neo4j-test
 
-db-nuke:        ## stop the container and DELETE the data volume
-	docker compose down -v
+db-down:        ## stop the containers (data volume survives)
+	docker compose --profile test down
+
+db-nuke:        ## stop the containers and DELETE the data volume
+	docker compose --profile test down -v
 
 db-ui: db-up    ## open Neo4j Browser for the compose database
 	@echo "Neo4j Browser: http://127.0.0.1:$(or $(CBX_NEO4J_HTTP_PORT),27474)  (user neo4j, password $(or $(CBX_NEO4J_PASSWORD),cbx-dev-password))"

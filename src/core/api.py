@@ -41,14 +41,24 @@ async def create_node(request: Request, data: NodeCreate):
         raise HTTPException(status.HTTP_400_BAD_REQUEST, f"unknown type {data.type}")
     if not schema.is_provider(data.provider):
         raise HTTPException(status.HTTP_400_BAD_REQUEST, f"unknown provider {data.provider}")
-    if not schema.has_binding(data.type) and (data.provider or data.native_id):
+    if not schema.has_binding(data.type) and (data.provider or data.provider_id):
         raise HTTPException(status.HTTP_400_BAD_REQUEST, f"{data.type} has no provider binding")
     if data.type == "Scope" and not data.provider:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Scope requires a provider")
+    check_provider_type(data.provider, data.type, data.provider_type)
     try:
         return await repo(request).create_node(data)
     except Conflict as e:
         raise HTTPException(status.HTTP_409_CONFLICT, str(e)) from e
+
+
+def check_provider_type(provider: str | None, type: str, provider_type: str | None) -> None:
+    if not schema.is_provider_type(provider, type, provider_type):
+        allowed = schema.provider_types(provider, type) or ["none"]
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            f"provider_type for {provider} {type} must be one of {allowed}",
+        )
 
 
 @router.get("/nodes/{id}", response_model=Node, tags=["nodes"])
@@ -62,6 +72,9 @@ async def get_node(request: Request, id: str):
 @router.patch("/nodes/{id}", response_model=Node, tags=["nodes"])
 async def update_node(request: Request, id: str, patch: NodeUpdate):
     try:
+        if "provider_type" in patch.model_fields_set:
+            current = await repo(request).get_node(id)
+            check_provider_type(current.provider, current.type, patch.provider_type)
         return await repo(request).update_node(id, patch)
     except NotFound as e:
         raise not_found(e) from e

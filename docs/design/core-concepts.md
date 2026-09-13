@@ -9,7 +9,7 @@
 | **Attribute** | A named value on a node or edge. Two layers: *normalized* attributes defined by the type (same name and meaning across providers) and *native* attributes (an opaque provider-specific map the core stores but does not interpret). |
 | **Relationship** (edge) | A typed, directed link between two nodes, e.g. `RUNS_IN`. May carry attributes. |
 | **Provider** | The system hosting the resource: `aws`, `gcp`, `azure`, `kubernetes`, `onprem`, ... |
-| **Provider binding** | Attributes tying a generic node to its real counterpart: provider, native type (`aws:ec2:instance`), native id (ARN, self-link, UID), region, native attribute map. |
+| **Provider binding** | Attributes tying a generic node to its real counterpart: provider, provider type (one of the schema's list for that provider and generic type, e.g. `vpc`, `switch`), provider id (ARN, self-link, inventory tag), region, native attribute map. |
 | **Scope** | The administrative container a resource lives in: account, project, subscription, physical site. A Scope declares the provider; every resource under it belongs to that provider. An Organization has no provider and can hold Scopes on different providers. Region and availability zone are attributes. |
 | **Source** | The importer that asserted a node, edge or attribute, and when it last saw it. Every fact carries its source. |
 | **Origin** | Whether a fact is *declared* (intent, e.g. Terraform) or *observed* (provider's live API). One resource may have both. |
@@ -50,14 +50,14 @@ Everything else is an attribute of the nearest node, or is not stored.
 - `id` — core-assigned, stable, opaque.
 - `type` — a generic type.
 - `name` — human-readable.
-- Provider binding: `provider`, `native_type`, `native_id`, `region` (nullable), `native` (map).
+- Provider binding: `provider`, `provider_type`, `provider_id`, `region` (nullable), `native` (map).
 - `tags` — key/value map from the provider's tags or labels.
 - `sources[]` — importer, origin, first seen, last seen.
 - `created_at`, `updated_at`.
 
 Every edge carries `type`, `sources[]`, timestamps, optional attributes.
 
-(`provider`, `native_id`) is the natural key importers upsert by. The core `id` is what
+(`provider`, `provider_id`) is the natural key importers upsert by. The core `id` is what
 exporters reference.
 
 ## Extension rules

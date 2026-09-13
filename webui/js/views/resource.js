@@ -4,7 +4,7 @@
 import { html, useEffect, useState } from "../../vendor/htm-preact-standalone.module.js";
 import { api } from "../api.js";
 
-const BINDING = ["provider", "native_type", "native_id", "region"];
+const BINDING = ["provider", "provider_type", "provider_id", "region"];
 
 const tagsToText = (tags) => Object.entries(tags ?? {}).map(([k, v]) => `${k}=${v}`).join("\n");
 const textToTags = (text) =>
@@ -41,23 +41,34 @@ function Form({ type, schema, form, setForm, attrNames, onSubmit, submitLabel, e
   const set = (k) => (e) => setForm({ ...form, [k]: e.target.value });
   const setAttr = (k) => (e) => setForm({ ...form, attrs: { ...form.attrs, [k]: e.target.value } });
   const def = schema.types[type] ?? {};
-  const nativeIdHint = schema.providers[form.provider]?.native_id ?? "";
+  const prov = schema.providers[form.provider];
+  const providerTypes = prov?.types?.[type] ?? [];
+  // label with a "?" whose hover text is the field's meaning from the schema
+  const Label = ({ name, text, help }) => html`<label>${text ?? name}
+    ${help ? html`<span class="help" title=${help}>?</span>` : null}</label>`;
+  const field = (name, text) => html`<${Label} name=${name} text=${text} help=${schema.fields?.[name]} />`;
+  // provider_type and provider_id show as "type" and "id" under the provider row
   const binding = def.binding === false ? null : html`
-    <label>provider</label>
-    <select value=${form.provider} onChange=${set("provider")} disabled=${locked} required>
+    ${field("provider")}
+    <select value=${form.provider} onChange=${(e) => setForm({ ...form, provider: e.target.value, provider_type: "" })}
+            disabled=${locked} required>
       <option value="">—</option>
       ${Object.keys(schema.providers).map((p) => html`<option value=${p}>${p}</option>`)}
     </select>
-    <label>native_type</label><input value=${form.native_type} onInput=${set("native_type")} />
-    <label>native_id</label><input value=${form.native_id} onInput=${set("native_id")} placeholder=${nativeIdHint} />
-    <label>region</label><input value=${form.region} onInput=${set("region")} />`;
+    ${field("provider_type", "type")}
+    <select value=${form.provider_type} onChange=${set("provider_type")} disabled=${!providerTypes.length} required=${providerTypes.length > 0}>
+      <option value="">${providerTypes.length ? "—" : "n/a"}</option>
+      ${providerTypes.map((t) => html`<option value=${t}>${t}</option>`)}
+    </select>
+    ${field("provider_id", "id")}<input value=${form.provider_id} onInput=${set("provider_id")} placeholder=${prov?.provider_id ?? ""} />
+    ${field("region")}<input value=${form.region} onInput=${set("region")} />`;
   return html`<form class="res" onSubmit=${(e) => { e.preventDefault(); onSubmit(); }}>
     <label>type</label><div><span class="badge">${type}</span> <span class="muted">${def.description}</span></div>
-    <label>name</label><input value=${form.name} onInput=${set("name")} required />
+    ${field("name")}<input value=${form.name} onInput=${set("name")} required />
     ${binding}
-    ${attrNames.map((a) => html`<label>${a}</label><input value=${form.attrs[a]} onInput=${setAttr(a)} />`)}
-    <label>tags</label><textarea placeholder="key=value per line" value=${form.tags} onInput=${set("tags")} />
-    <label>native</label><textarea value=${form.native} onInput=${set("native")} />
+    ${attrNames.map((a) => html`<${Label} name=${a} help=${def.attributes?.[a]} /><input value=${form.attrs[a]} onInput=${setAttr(a)} />`)}
+    ${field("tags")}<textarea placeholder="key=value per line" value=${form.tags} onInput=${set("tags")} />
+    ${field("native")}<textarea value=${form.native} onInput=${set("native")} />
     <div class="actions"><button class="primary" type="submit">${submitLabel}</button>${extra}</div>
   </form>`;
 }
@@ -105,7 +116,7 @@ export function Resource({ id }) {
   const load = () =>
     Promise.all([api.node(id), api.nodeEdges(id), api.nodes(), api.schema()])
       .then(([node, edges, nodes, schema]) => {
-        const attrNames = schema.types[node.type]?.attributes ?? [];
+        const attrNames = Object.keys(schema.types[node.type]?.attributes ?? {});
         setState({ node, edges, nodes, schema, names: new Map(nodes.map((n) => [n.id, n.name])), attrNames });
         setForm(toForm(node, attrNames));
         setError(null);
@@ -148,7 +159,7 @@ export function NewResource({ type, parentId }) {
   useEffect(() => {
     Promise.all([api.schema(), parentId ? api.node(parentId) : null])
       .then(([schema, parent]) => {
-        const attrNames = schema.types[type]?.attributes ?? [];
+        const attrNames = Object.keys(schema.types[type]?.attributes ?? {});
         setCtx({ schema, parent, attrNames });
         setForm(toForm({ provider: parent?.provider, region: parent?.region }, attrNames));
       })

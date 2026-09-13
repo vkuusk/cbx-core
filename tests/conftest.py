@@ -1,4 +1,5 @@
-"""Tests run against a real Neo4j and wipe every Resource node before each test."""
+"""Tests run against the separate test Neo4j (compose service neo4j-test) and wipe every
+Resource node in it before each test."""
 
 import os
 from urllib.parse import urlparse
@@ -14,7 +15,14 @@ LOCAL_HOSTS = {"127.0.0.1", "localhost", "::1"}
 
 @pytest.fixture(scope="session")
 def cfg() -> config.Config:
-    c = config.load()
+    env = os.environ
+    c = config.load(
+        {
+            **env,
+            "CBX_NEO4J_URI": env.get("CBX_TEST_NEO4J_URI", "bolt://127.0.0.1:27688"),
+            "CBX_NEO4J_PASSWORD": env.get("CBX_TEST_NEO4J_PASSWORD", "cbx-test-password"),
+        }
+    )
     host = urlparse(c.neo4j_uri).hostname
     if host not in LOCAL_HOSTS and not os.environ.get("CBX_TEST_ALLOW_REMOTE"):
         pytest.exit(f"refusing to run tests against non-local Neo4j {c.neo4j_uri}", returncode=2)

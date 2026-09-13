@@ -37,6 +37,9 @@ h2 { font-size: 15px; margin: 24px 0 8px; }
 /* forms */
 form.res { display: grid; grid-template-columns: 160px 1fr; gap: 8px 12px; align-items: start; max-width: 720px; }
 form.res label { padding-top: 6px; color: var(--muted); }
+.help { display: inline-block; width: 15px; height: 15px; margin-left: 4px; border-radius: 50%;
+        border: 1px solid var(--muted); font-size: 11px; line-height: 13px; text-align: center;
+        cursor: help; user-select: none; }
 form.res input, form.res textarea, form.res select {
   width: 100%; padding: 5px 8px; border: 1px solid var(--line); border-radius: 4px;
   background: var(--panel); color: var(--fg); font: inherit; }

@@ -12,18 +12,35 @@ def edge(client, type, from_id, to_id):
 
 def aws_tree(client):
     org = node(client, "Organization", "acme")
-    acct = node(client, "Scope", "prod", provider="aws", native_id="123456789012")
+    acct = node(
+        client, "Scope", "prod", provider="aws", provider_type="account", provider_id="123456789012"
+    )
     vpc = node(
         client,
         "Network",
         "vpc-main",
         provider="aws",
-        native_id="vpc-1",
+        provider_type="vpc",
+        provider_id="vpc-1",
         attrs={"cidr": "10.0.0.0/16"},
     )
-    sub = node(client, "Subnet", "sub-a", provider="aws", native_id="subnet-1", region="us-east-1")
+    sub = node(
+        client,
+        "Subnet",
+        "sub-a",
+        provider="aws",
+        provider_type="subnet",
+        provider_id="subnet-1",
+        region="us-east-1",
+    )
     ec2 = node(
-        client, "ComputeNode", "web-1", provider="aws", native_id="i-1", tags={"role": "web"}
+        client,
+        "ComputeNode",
+        "web-1",
+        provider="aws",
+        provider_type="ec2-instance",
+        provider_id="i-1",
+        tags={"role": "web"},
     )
     edge(client, "CONTAINS", org["id"], acct["id"])
     edge(client, "CONTAINS", acct["id"], vpc["id"])
@@ -56,11 +73,45 @@ def test_provider_lives_on_scope(client):
     assert r.status_code == 400
     r = client.post("/api/nodes", json={"type": "Scope", "name": "site"})
     assert r.status_code == 400
-    node(client, "Scope", "site", provider="on-prem")
+    node(client, "Scope", "site", provider="on-prem", provider_type="site")
+
+
+def test_provider_type_is_an_enum(client):
+    s = client.get("/api/schema").json()
+    assert s["providers"]["on-prem"]["types"]["NetworkDevice"] == [
+        "switch",
+        "router",
+        "firewall",
+        "access-point",
+    ]
+    r = client.post(
+        "/api/nodes",
+        json={"type": "Network", "name": "x", "provider": "aws", "provider_type": "vlan"},
+    )
+    assert r.status_code == 400
+    n = node(client, "Network", "office", provider="on-prem", provider_type="vlan")
+    assert n["provider_type"] == "vlan"
+    r = client.patch(f"/api/nodes/{n['id']}", json={"provider_type": "vpc"})
+    assert r.status_code == 400
+    assert client.patch(f"/api/nodes/{n['id']}", json={"provider_type": "lan"}).status_code == 200
+    # no provider types defined for this pair: provider_type must stay empty
+    r = client.post(
+        "/api/nodes",
+        json={"type": "NetworkDevice", "name": "tgw", "provider": "aws", "provider_type": "x"},
+    )
+    assert r.status_code == 400
+    node(client, "NetworkDevice", "tgw", provider="aws")
 
 
 def test_manual_edits_carry_inventory_source(client):
-    n = node(client, "ComputeNode", "nas", provider="on-prem", native_id="INV-0042")
+    n = node(
+        client,
+        "ComputeNode",
+        "nas",
+        provider="on-prem",
+        provider_type="nas",
+        provider_id="INV-0042",
+    )
     assert [s["importer"] for s in n["sources"]] == ["inventory"]
     assert n["sources"][0]["origin"] == "declared"
     first = n["sources"][0]["last_seen"]
@@ -69,19 +120,37 @@ def test_manual_edits_carry_inventory_source(client):
     assert len(r["sources"]) == 1 and r["sources"][0]["last_seen"] >= first
 
     explicit = [{"importer": "aws", "origin": "observed", "first_seen": first, "last_seen": first}]
-    n2 = node(client, "ComputeNode", "web", provider="aws", native_id="i-9", sources=explicit)
+    n2 = node(
+        client,
+        "ComputeNode",
+        "web",
+        provider="aws",
+        provider_type="ec2-instance",
+        provider_id="i-9",
+        sources=explicit,
+    )
     assert [s["importer"] for s in n2["sources"]] == ["aws"]
 
 
 def test_home_lab_tree(client):
-    lan = node(client, "Network", "LAN", provider="on-prem", native_id="LAN-1")
-    sw = node(client, "NetworkDevice", "switch-1", provider="on-prem", native_id="INV-0007")
+    lan = node(
+        client, "Network", "LAN", provider="on-prem", provider_type="lan", provider_id="LAN-1"
+    )
+    sw = node(
+        client,
+        "NetworkDevice",
+        "switch-1",
+        provider="on-prem",
+        provider_type="switch",
+        provider_id="INV-0007",
+    )
     sub = node(
         client,
         "Subnet",
         "lab",
         provider="on-prem",
-        native_id="INV-0007/10",
+        provider_type="subnet",
+        provider_id="INV-0007/10",
         attrs={"cidr": "10.0.0.0/24"},
     )
     edge(client, "CONTAINS", lan["id"], sw["id"])
@@ -93,7 +162,13 @@ def test_home_lab_tree(client):
 
 def test_node_crud(client):
     n = node(
-        client, "ComputeNode", "web-1", provider="aws", native_id="i-1", attrs={"state": "running"}
+        client,
+        "ComputeNode",
+        "web-1",
+        provider="aws",
+        provider_type="ec2-instance",
+        provider_id="i-1",
+        attrs={"state": "running"},
     )
     assert n["type"] == "ComputeNode" and n["attrs"] == {"state": "running"}
 
@@ -117,10 +192,18 @@ def test_unknown_type_rejected(client):
 
 
 def test_natural_key_unique(client):
-    node(client, "ComputeNode", "a", provider="aws", native_id="i-1")
+    node(
+        client, "ComputeNode", "a", provider="aws", provider_type="ec2-instance", provider_id="i-1"
+    )
     r = client.post(
         "/api/nodes",
-        json={"type": "ComputeNode", "name": "b", "provider": "aws", "native_id": "i-1"},
+        json={
+            "type": "ComputeNode",
+            "name": "b",
+            "provider": "aws",
+            "provider_type": "ec2-instance",
+            "provider_id": "i-1",
+        },
     )
     assert r.status_code == 409
 

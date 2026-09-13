@@ -14,7 +14,7 @@ Requires Docker, [uv](https://docs.astral.sh/uv/) and `make`.
 make install      # venv and dependencies
 make run          # Neo4j in a container + API in the background
 make run-stop     # stop the API
-make test         # tests against the compose Neo4j
+make test         # tests, against a separate test Neo4j container
 make help         # all targets
 ```
 

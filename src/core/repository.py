@@ -24,8 +24,8 @@ def _now() -> str:
     return datetime.now(UTC).isoformat()
 
 
-def _natural_key(provider: str | None, native_id: str | None) -> str | None:
-    return f"{provider}:{native_id}" if provider and native_id else None
+def _natural_key(provider: str | None, provider_id: str | None) -> str | None:
+    return f"{provider}:{provider_id}" if provider and provider_id else None
 
 
 INVENTORY = "inventory"
@@ -87,6 +87,12 @@ class Repository:
             "CREATE CONSTRAINT resource_natural_key IF NOT EXISTS "
             "FOR (n:Resource) REQUIRE n.natural_key IS UNIQUE"
         )
+        # property rename native_* -> provider_* (2026-09-13); no-op once applied
+        await self._run(
+            "MATCH (n:Resource) WHERE n.native_id IS NOT NULL OR n.native_type IS NOT NULL "
+            "SET n.provider_id = n.native_id, n.provider_type = n.native_type "
+            "REMOVE n.native_id, n.native_type"
+        )
 
     # nodes
 
@@ -98,7 +104,7 @@ class Repository:
         props = _to_props(body)
         props.update(
             id=str(uuid.uuid4()),
-            natural_key=_natural_key(data.provider, data.native_id),
+            natural_key=_natural_key(data.provider, data.provider_id),
             created_at=now,
             updated_at=now,
         )
@@ -132,11 +138,11 @@ class Repository:
         changes = patch.model_dump(mode="json", exclude_unset=True)
         current = await self.get_node(id)
         provider = current.provider
-        native_id = changes.get("native_id", current.native_id)
+        provider_id = changes.get("provider_id", current.provider_id)
         if "sources" not in changes:
             changes["sources"] = _touch_inventory(current.model_dump(mode="json")["sources"], now)
         props = _to_props(changes)
-        props.update(natural_key=_natural_key(provider, native_id), updated_at=now)
+        props.update(natural_key=_natural_key(provider, provider_id), updated_at=now)
         try:
             records = await self._run(
                 "MATCH (n:Resource {id: $id}) SET n += $props RETURN properties(n) AS n",

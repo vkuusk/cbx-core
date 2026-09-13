@@ -14,15 +14,19 @@ Decisions made so far. Each item is a decision unless marked *pending*.
 - Neo4j access: official `neo4j` Python driver, async mode. No object-graph mapper. A thin
   repository module holds the parameterized Cypher queries.
 - Packaging: uv.
-- Tests: pytest against a real Neo4j (compose container or home lab), no database mocks.
+- Tests: pytest against a separate test Neo4j (compose service `neo4j-test`, no volume, own
+  port), no database mocks. Tests never touch the working database.
 
 ## Schema
 
 - `src/core/schema.py` is the single source of truth: providers, node types with their
   normalized attributes, edge types, allowed (from, edge, to) triples, and a one-line meaning
   for each. `GET /api/schema` serves it as-is; the web UI renders forms from it.
-- Providers: `on-prem`, `aws`, `gcp`. For `on-prem`, `native_id` is the inventory tag (the
+- Providers: `on-prem`, `aws`, `gcp`. For `on-prem`, `provider_id` is the inventory tag (the
   sticker on the device).
+- `provider_type` is an enum: the schema lists the allowed values per provider and generic
+  type (e.g. on-prem NetworkDevice: switch, router, firewall, access-point). The UI shows
+  `provider_type` and `provider_id` as "type" and "id" under the provider row.
 - The provider is chosen on a Scope and inherited by everything under it. Organization has no
   provider binding; the API rejects one.
 - A write with no explicit `sources` is a manual inventory edit: the core stamps it with
