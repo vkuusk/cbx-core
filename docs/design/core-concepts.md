@@ -34,6 +34,7 @@ Everything else is an attribute of the nearest node, or is not stored.
 | Network interface, private IP, public IP | Attribute of the compute node |
 | Subnet | Node |
 | Route table, routes, NACL | Attribute of the network, or not stored |
+| Switch, router, firewall | Node (`NetworkDevice`); ports and VLAN tables are attributes |
 | Security group | Node; individual rules are attributes |
 | Block volume | Node |
 | IAM role / service account | Node; policies are attributes |

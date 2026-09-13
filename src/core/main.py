@@ -12,7 +12,7 @@ from . import config
 from .api import router
 from .repository import Repository
 
-log = logging.getLogger("cbx_core")
+log = logging.getLogger("core")
 
 
 def create_app(cfg: config.Config) -> FastAPI:

@@ -19,25 +19,27 @@ Existing projects we borrow from are in [research-summary.md](research-summary.m
 
 ## Skeleton (first milestone)
 
-One organization, one provider (AWS), one account, one region. The graph holds networks,
-subnets and compute nodes.
+One organization, one scope, one network. Providers `on-prem`, `aws`, `gcp`; the first real
+use is a home lab on `on-prem`.
 
 Nodes:
 
-| Type | AWS binding |
-|---|---|
-| `Organization` | none, root of the graph |
-| `Scope` | AWS account |
-| `Network` | VPC |
-| `Subnet` | subnet |
-| `ComputeNode` | EC2 instance |
+| Type | on-prem | AWS |
+|---|---|---|
+| `Organization` | root of the graph, no binding | |
+| `Scope` | site | account |
+| `Network` | LAN / VLAN | VPC |
+| `Subnet` | address range | subnet |
+| `NetworkDevice` | switch, router, firewall | |
+| `ComputeNode` | host | EC2 instance |
 
 Edges:
 
 | Edge | From → To |
 |---|---|
-| `CONTAINS` | Organization → Scope, Scope → Network, Network → Subnet |
+| `CONTAINS` | Organization → Scope, Scope → Network, Network → Subnet, Network → NetworkDevice |
 | `RUNS_IN` | ComputeNode → Subnet |
+| `SERVED_BY` | Subnet → NetworkDevice |
 
 Workflows the skeleton must exercise end to end:
 

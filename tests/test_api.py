@@ -40,9 +40,47 @@ def test_health(client):
 
 def test_schema(client):
     s = client.get("/api/schema").json()
-    assert "ComputeNode" in s["types"]
-    assert s["edge_types"] == ["CONTAINS", "RUNS_IN"]
+    assert set(s["providers"]) == {"on-prem", "aws", "gcp"}
+    assert s["types"]["ComputeNode"]["attributes"]
+    assert set(s["edge_types"]) == {"CONTAINS", "RUNS_IN", "SERVED_BY"}
     assert {"from": "ComputeNode", "edge": "RUNS_IN", "to": "Subnet"} in s["triples"]
+
+
+def test_unknown_provider_rejected(client):
+    r = client.post("/api/nodes", json={"type": "ComputeNode", "name": "x", "provider": "azure"})
+    assert r.status_code == 400
+
+
+def test_manual_edits_carry_inventory_source(client):
+    n = node(client, "ComputeNode", "nas", provider="on-prem", native_id="INV-0042")
+    assert [s["importer"] for s in n["sources"]] == ["inventory"]
+    assert n["sources"][0]["origin"] == "declared"
+    first = n["sources"][0]["last_seen"]
+
+    r = client.patch(f"/api/nodes/{n['id']}", json={"name": "nas-1"}).json()
+    assert len(r["sources"]) == 1 and r["sources"][0]["last_seen"] >= first
+
+    explicit = [{"importer": "aws", "origin": "observed", "first_seen": first, "last_seen": first}]
+    n2 = node(client, "ComputeNode", "web", provider="aws", native_id="i-9", sources=explicit)
+    assert [s["importer"] for s in n2["sources"]] == ["aws"]
+
+
+def test_home_lab_tree(client):
+    lan = node(client, "Network", "LAN", provider="on-prem", native_id="LAN-1")
+    sw = node(client, "NetworkDevice", "switch-1", provider="on-prem", native_id="INV-0007")
+    sub = node(
+        client,
+        "Subnet",
+        "lab",
+        provider="on-prem",
+        native_id="INV-0007/10",
+        attrs={"cidr": "10.0.0.0/24"},
+    )
+    edge(client, "CONTAINS", lan["id"], sw["id"])
+    edge(client, "CONTAINS", lan["id"], sub["id"])
+    edge(client, "SERVED_BY", sub["id"], sw["id"])
+    e = client.get(f"/api/nodes/{sw['id']}/edges").json()
+    assert {x["type"] for x in e["in"]} == {"CONTAINS", "SERVED_BY"}
 
 
 def test_node_crud(client):

@@ -6,8 +6,8 @@ from urllib.parse import urlparse
 import pytest
 from fastapi.testclient import TestClient
 
-from cbx_core import config
-from cbx_core.main import create_app
+from core import config
+from core.main import create_app
 
 LOCAL_HOSTS = {"127.0.0.1", "localhost", "::1"}
 

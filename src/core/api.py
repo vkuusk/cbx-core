@@ -39,6 +39,8 @@ async def list_nodes(request: Request, type: str | None = None, provider: str | 
 async def create_node(request: Request, data: NodeCreate):
     if not schema.is_type(data.type):
         raise HTTPException(status.HTTP_400_BAD_REQUEST, f"unknown type {data.type}")
+    if not schema.is_provider(data.provider):
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, f"unknown provider {data.provider}")
     try:
         return await repo(request).create_node(data)
     except Conflict as e:

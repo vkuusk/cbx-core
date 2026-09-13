@@ -16,7 +16,7 @@ class Config:
 
 
 def _default_webui_dir() -> Path:
-    # src/cbx_core/config.py -> repo root / webui
+    # src/core/config.py -> repo root / webui
     return Path(__file__).resolve().parents[2] / "webui"
 
 

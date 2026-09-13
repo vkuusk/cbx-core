@@ -16,20 +16,42 @@ Decisions made so far. Each item is a decision unless marked *pending*.
 - Packaging: uv.
 - Tests: pytest against a real Neo4j (compose container or home lab), no database mocks.
 
+## Schema
+
+- `src/core/schema.py` is the single source of truth: providers, node types with their
+  normalized attributes, edge types, allowed (from, edge, to) triples, and a one-line meaning
+  for each. `GET /api/schema` serves it as-is; the web UI renders forms from it.
+- Providers: `on-prem`, `aws`, `gcp`. For `on-prem`, `native_id` is the inventory tag (the
+  sticker on the device).
+- A write with no explicit `sources` is a manual inventory edit: the core stamps it with
+  importer `inventory`, origin `declared`.
+
+## Interfaces
+
+- Core and officially supported interfaces live in this repo. Core is `src/core/`; each
+  interface is a package under `src/interfaces/<name>/`.
+- Every interface talks to the core only through the HTTP API, including the ones in this
+  repo. No interface touches Neo4j.
+- First interface: **inventory**, the web UI plus the API, for adding, editing and removing
+  infrastructure by hand.
+
 ## Web UI
 
 - Preact with htm, one vendored ES module in `webui/vendor`, no build step and no node
   toolchain. Served by the API as static files at `/`.
-- Hash-routed pages: Browse (tree) and Resource (create, edit, delete, edges).
+- Hash-routed pages: Browse (tree) and Resource (create, edit, delete, link, unlink).
+- Swagger UI at `/api/docs`, OpenAPI document at `/api/openapi.json`.
 
 ## Source layout
 
 ```
-src/cbx_core/   application code
-tests/          tests
-webui/          static web UI
-docs/design/    design docs
-sandbox/        local run logs and pid (gitignored)
+src/core/         the core: API, schema, storage
+src/interfaces/   official interfaces, one package each
+tests/            tests
+webui/            static web UI
+docs/design/      design docs
+docs/planning/    implementation plans
+sandbox/          local run logs and pid (gitignored)
 ```
 
 ## Local development

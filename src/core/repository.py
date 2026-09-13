@@ -28,6 +28,22 @@ def _natural_key(provider: str | None, native_id: str | None) -> str | None:
     return f"{provider}:{native_id}" if provider and native_id else None
 
 
+INVENTORY = "inventory"
+
+
+# a write with no explicit source is a manual inventory edit
+def _inventory_source(now: str) -> dict:
+    return {"importer": INVENTORY, "origin": "declared", "first_seen": now, "last_seen": now}
+
+
+def _touch_inventory(sources: list[dict], now: str) -> list[dict]:
+    for s in sources:
+        if s["importer"] == INVENTORY:
+            s["last_seen"] = now
+            return sources
+    return [*sources, _inventory_source(now)]
+
+
 def _to_props(data: dict) -> dict:
     props = dict(data)
     for f in JSON_FIELDS:
@@ -76,7 +92,10 @@ class Repository:
 
     async def create_node(self, data: NodeCreate) -> Node:
         now = _now()
-        props = _to_props(data.model_dump(mode="json"))
+        body = data.model_dump(mode="json")
+        if not body["sources"]:
+            body["sources"] = [_inventory_source(now)]
+        props = _to_props(body)
         props.update(
             id=str(uuid.uuid4()),
             natural_key=_natural_key(data.provider, data.native_id),
@@ -109,12 +128,15 @@ class Repository:
         return _node(records[0]["n"])
 
     async def update_node(self, id: str, patch: NodeUpdate) -> Node:
+        now = _now()
         changes = patch.model_dump(mode="json", exclude_unset=True)
         current = await self.get_node(id)
         provider = current.provider
         native_id = changes.get("native_id", current.native_id)
+        if "sources" not in changes:
+            changes["sources"] = _touch_inventory(current.model_dump(mode="json")["sources"], now)
         props = _to_props(changes)
-        props.update(natural_key=_natural_key(provider, native_id), updated_at=_now())
+        props.update(natural_key=_natural_key(provider, native_id), updated_at=now)
         try:
             records = await self._run(
                 "MATCH (n:Resource {id: $id}) SET n += $props RETURN properties(n) AS n",
