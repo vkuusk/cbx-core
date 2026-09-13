@@ -1,3 +1,8 @@
+.DS_Store
+temp/
+.idea/
+
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
@@ -216,3 +221,5 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+.env
+sandbox/

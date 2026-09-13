@@ -1,0 +1,21 @@
+name: cbx-core
+
+services:
+  neo4j:
+    image: neo4j:2026.08-community
+    container_name: cbx-core-neo4j
+    environment:
+      NEO4J_AUTH: neo4j/${CBX_NEO4J_PASSWORD:-cbx-dev-password}
+    ports:
+      - "127.0.0.1:${CBX_NEO4J_BOLT_PORT:-27687}:7687"
+      - "127.0.0.1:${CBX_NEO4J_HTTP_PORT:-27474}:7474"
+    volumes:
+      - cbx-neo4j-data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:7474 || exit 1"]
+      interval: 2s
+      timeout: 2s
+      retries: 30
+
+volumes:
+  cbx-neo4j-data:

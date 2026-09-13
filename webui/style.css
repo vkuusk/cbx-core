@@ -1,0 +1,53 @@
+:root {
+  color-scheme: light dark;
+  --bg: #fafafa; --fg: #1b1e23; --muted: #6b7280; --line: #e2e4e8;
+  --panel: #ffffff; --accent: #2563eb; --danger: #dc2626; --badge: #eef2ff;
+  font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #1b1e23; --fg: #e6e8eb; --muted: #9aa3ad; --line: #30353c;
+          --panel: #23272e; --accent: #60a5fa; --danger: #f87171; --badge: #2b3140; }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+header { display: flex; align-items: center; gap: 20px; padding: 10px 20px;
+         border-bottom: 1px solid var(--line); background: var(--panel); }
+header .brand { font-weight: 600; }
+header nav a { margin-right: 14px; }
+header nav a.active { font-weight: 600; text-decoration: underline; }
+main { padding: 20px; max-width: 960px; }
+h1 { font-size: 20px; margin: 0 0 16px; }
+h2 { font-size: 15px; margin: 24px 0 8px; }
+.muted { color: var(--muted); }
+.error { color: var(--danger); margin: 8px 0; }
+
+/* tree */
+.tree ul { list-style: none; margin: 0; padding-left: 22px; }
+.tree > ul { padding-left: 0; }
+.tree li { margin: 2px 0; }
+.tree .row { display: flex; align-items: center; gap: 8px; padding: 3px 6px; border-radius: 4px; }
+.tree .row:hover { background: var(--panel); }
+.tree .toggle { width: 16px; color: var(--muted); cursor: pointer; user-select: none; }
+.tree .add { color: var(--muted); font-size: 12px; margin-left: 6px; }
+.badge { font-size: 11px; padding: 1px 6px; border-radius: 3px; background: var(--badge); color: var(--muted); }
+
+/* forms */
+form.res { display: grid; grid-template-columns: 160px 1fr; gap: 8px 12px; align-items: start; max-width: 720px; }
+form.res label { padding-top: 6px; color: var(--muted); }
+form.res input, form.res textarea, form.res select {
+  width: 100%; padding: 5px 8px; border: 1px solid var(--line); border-radius: 4px;
+  background: var(--panel); color: var(--fg); font: inherit; }
+form.res textarea { min-height: 70px; font-family: ui-monospace, Menlo, monospace; font-size: 12px; }
+form.res .actions { grid-column: 2; display: flex; gap: 8px; margin-top: 8px; }
+button { padding: 6px 12px; border: 1px solid var(--line); border-radius: 4px;
+         background: var(--panel); color: var(--fg); font: inherit; cursor: pointer; }
+button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+button.danger { color: var(--danger); }
+button:disabled { opacity: .5; cursor: default; }
+
+table { border-collapse: collapse; }
+td, th { padding: 4px 10px 4px 0; text-align: left; border-bottom: 1px solid var(--line); }
+th { color: var(--muted); font-weight: 500; }

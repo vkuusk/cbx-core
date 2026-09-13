@@ -1,2 +1,2 @@
 # cbx-core
-Core of CBX Org management system
+Core of Infrastructure management ecosystem
