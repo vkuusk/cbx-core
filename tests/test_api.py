@@ -78,12 +78,13 @@ def test_provider_lives_on_scope(client):
 
 def test_provider_type_is_an_enum(client):
     s = client.get("/api/schema").json()
-    assert s["providers"]["on-prem"]["types"]["NetworkDevice"] == [
+    assert list(s["providers"]["on-prem"]["types"]["NetworkDevice"]) == [
         "switch",
         "router",
         "firewall",
         "access-point",
     ]
+    assert s["providers"]["on-prem"]["types"]["Scope"]["site"].startswith("site code")
     r = client.post(
         "/api/nodes",
         json={"type": "Network", "name": "x", "provider": "aws", "provider_type": "vlan"},

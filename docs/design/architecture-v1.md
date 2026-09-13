@@ -22,11 +22,11 @@ Decisions made so far. Each item is a decision unless marked *pending*.
 - `src/core/schema.py` is the single source of truth: providers, node types with their
   normalized attributes, edge types, allowed (from, edge, to) triples, and a one-line meaning
   for each. `GET /api/schema` serves it as-is; the web UI renders forms from it.
-- Providers: `on-prem`, `aws`, `gcp`. For `on-prem`, `provider_id` is the inventory tag (the
-  sticker on the device).
+- Providers: `on-prem`, `aws`, `gcp`.
 - `provider_type` is an enum: the schema lists the allowed values per provider and generic
-  type (e.g. on-prem NetworkDevice: switch, router, firewall, access-point). The UI shows
-  `provider_type` and `provider_id` as "type" and "id" under the provider row.
+  type (e.g. on-prem NetworkDevice: switch, router, firewall, access-point), each with what
+  `provider_id` holds for it (on-prem site: site code; switch: inventory tag; vlan: VLAN id).
+  The UI shows `provider_type` and `provider_id` as "type" and "id" under the provider row.
 - The provider is chosen on a Scope and inherited by everything under it. Organization has no
   provider binding; the API rejects one.
 - A write with no explicit `sources` is a manual inventory edit: the core stamps it with

@@ -42,7 +42,9 @@ function Form({ type, schema, form, setForm, attrNames, onSubmit, submitLabel, e
   const setAttr = (k) => (e) => setForm({ ...form, attrs: { ...form.attrs, [k]: e.target.value } });
   const def = schema.types[type] ?? {};
   const prov = schema.providers[form.provider];
-  const providerTypes = prov?.types?.[type] ?? [];
+  const typeHints = prov?.types?.[type] ?? {}; // provider type -> what id holds
+  const providerTypes = Object.keys(typeHints);
+  const idHint = typeHints[form.provider_type] ?? "";
   // label with a "?" whose hover text is the field's meaning from the schema
   const Label = ({ name, text, help }) => html`<label>${text ?? name}
     ${help ? html`<span class="help" title=${help}>?</span>` : null}</label>`;
@@ -60,7 +62,7 @@ function Form({ type, schema, form, setForm, attrNames, onSubmit, submitLabel, e
       <option value="">${providerTypes.length ? "—" : "n/a"}</option>
       ${providerTypes.map((t) => html`<option value=${t}>${t}</option>`)}
     </select>
-    ${field("provider_id", "id")}<input value=${form.provider_id} onInput=${set("provider_id")} placeholder=${prov?.provider_id ?? ""} />
+    ${field("provider_id", "id")}<input value=${form.provider_id} onInput=${set("provider_id")} placeholder=${idHint} />
     ${field("region")}<input value=${form.region} onInput=${set("region")} />`;
   return html`<form class="res" onSubmit=${(e) => { e.preventDefault(); onSubmit(); }}>
     <label>type</label><div><span class="badge">${type}</span> <span class="muted">${def.description}</span></div>

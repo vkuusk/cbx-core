@@ -4,35 +4,44 @@ allowed triples.
 The single source of truth for what the core can hold. Served as-is by GET /api/schema.
 """
 
-# provider -> what provider_id holds
 PROVIDERS: dict[str, str] = {
-    "on-prem": "inventory tag (sticker) for devices; VLAN id or name for networks and subnets",
-    "aws": "resource id or ARN",
-    "gcp": "resource self-link or id",
+    "on-prem": "Physical infrastructure you own.",
+    "aws": "Amazon Web Services.",
+    "gcp": "Google Cloud.",
 }
 
-# provider -> generic type -> allowed provider types
-PROVIDER_TYPES: dict[str, dict[str, list[str]]] = {
+# provider -> generic type -> allowed provider types -> what provider_id holds
+PROVIDER_TYPES: dict[str, dict[str, dict[str, str]]] = {
     "on-prem": {
-        "Scope": ["site"],
-        "Network": ["lan", "vlan"],
-        "Subnet": ["subnet"],
-        "NetworkDevice": ["switch", "router", "firewall", "access-point"],
-        "ComputeNode": ["server", "mini-pc", "vm", "nas"],
+        "Scope": {"site": "site code, e.g. home"},
+        "Network": {"lan": "LAN name", "vlan": "VLAN id"},
+        "Subnet": {"subnet": "subnet name or VLAN id"},
+        "NetworkDevice": {
+            "switch": "inventory tag (sticker)",
+            "router": "inventory tag (sticker)",
+            "firewall": "inventory tag (sticker)",
+            "access-point": "inventory tag (sticker)",
+        },
+        "ComputeNode": {
+            "server": "inventory tag (sticker)",
+            "mini-pc": "inventory tag (sticker)",
+            "vm": "VM id or name on its host",
+            "nas": "inventory tag (sticker)",
+        },
     },
     "aws": {
-        "Scope": ["account"],
-        "Network": ["vpc"],
-        "Subnet": ["subnet"],
-        "NetworkDevice": [],
-        "ComputeNode": ["ec2-instance"],
+        "Scope": {"account": "account id"},
+        "Network": {"vpc": "vpc id"},
+        "Subnet": {"subnet": "subnet id"},
+        "NetworkDevice": {},
+        "ComputeNode": {"ec2-instance": "instance id"},
     },
     "gcp": {
-        "Scope": ["project"],
-        "Network": ["vpc"],
-        "Subnet": ["subnet"],
-        "NetworkDevice": [],
-        "ComputeNode": ["compute-instance"],
+        "Scope": {"project": "project id"},
+        "Network": {"vpc": "network self-link"},
+        "Subnet": {"subnet": "subnetwork self-link"},
+        "NetworkDevice": {},
+        "ComputeNode": {"compute-instance": "instance id or self-link"},
     },
 }
 
@@ -116,7 +125,7 @@ def has_binding(type: str) -> bool:
 
 
 def provider_types(provider: str | None, type: str) -> list[str]:
-    return PROVIDER_TYPES.get(provider, {}).get(type, [])
+    return list(PROVIDER_TYPES.get(provider, {}).get(type, {}))
 
 
 # a provider type is required when the provider offers any for this generic type
@@ -141,7 +150,7 @@ def describe() -> dict:
     order = list(EDGE_TYPES)
     return {
         "providers": {
-            name: {"provider_id": desc, "types": PROVIDER_TYPES[name]}
+            name: {"description": desc, "types": PROVIDER_TYPES[name]}
             for name, desc in PROVIDERS.items()
         },
         "fields": FIELDS,
