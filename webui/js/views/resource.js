@@ -35,22 +35,26 @@ function toBody(form) {
   };
 }
 
-// `locked`: provider cannot change after create
+// The provider is chosen on a Scope and inherited below it (`locked`); types without a
+// binding show no binding fields.
 function Form({ type, schema, form, setForm, attrNames, onSubmit, submitLabel, extra, locked }) {
   const set = (k) => (e) => setForm({ ...form, [k]: e.target.value });
   const setAttr = (k) => (e) => setForm({ ...form, attrs: { ...form.attrs, [k]: e.target.value } });
+  const def = schema.types[type] ?? {};
   const nativeIdHint = schema.providers[form.provider]?.native_id ?? "";
-  return html`<form class="res" onSubmit=${(e) => { e.preventDefault(); onSubmit(); }}>
-    <label>type</label><div><span class="badge">${type}</span> <span class="muted">${schema.types[type]?.description}</span></div>
-    <label>name</label><input value=${form.name} onInput=${set("name")} required />
+  const binding = def.binding === false ? null : html`
     <label>provider</label>
-    <select value=${form.provider} onChange=${set("provider")} disabled=${locked}>
+    <select value=${form.provider} onChange=${set("provider")} disabled=${locked} required>
       <option value="">—</option>
       ${Object.keys(schema.providers).map((p) => html`<option value=${p}>${p}</option>`)}
     </select>
     <label>native_type</label><input value=${form.native_type} onInput=${set("native_type")} />
     <label>native_id</label><input value=${form.native_id} onInput=${set("native_id")} placeholder=${nativeIdHint} />
-    <label>region</label><input value=${form.region} onInput=${set("region")} />
+    <label>region</label><input value=${form.region} onInput=${set("region")} />`;
+  return html`<form class="res" onSubmit=${(e) => { e.preventDefault(); onSubmit(); }}>
+    <label>type</label><div><span class="badge">${type}</span> <span class="muted">${def.description}</span></div>
+    <label>name</label><input value=${form.name} onInput=${set("name")} required />
+    ${binding}
     ${attrNames.map((a) => html`<label>${a}</label><input value=${form.attrs[a]} onInput=${setAttr(a)} />`)}
     <label>tags</label><textarea placeholder="key=value per line" value=${form.tags} onInput=${set("tags")} />
     <label>native</label><textarea value=${form.native} onInput=${set("native")} />
@@ -176,6 +180,6 @@ export function NewResource({ type, parentId }) {
     ${parent ? html`<p class="muted">under <a href=${`#/resource/${parent.id}`}>${parent.name}</a> (${parent.type})</p>` : null}
     ${error ? html`<p class="error">${error}</p>` : null}
     <${Form} type=${type} schema=${schema} form=${form} setForm=${setForm} attrNames=${attrNames}
-             onSubmit=${create} submitLabel="Create"
+             onSubmit=${create} submitLabel="Create" locked=${type !== "Scope"}
              extra=${html`<a href=${parent ? `#/resource/${parent.id}` : "#/browse"}><button type="button">Cancel</button></a>`} />`;
 }

@@ -51,6 +51,14 @@ def test_unknown_provider_rejected(client):
     assert r.status_code == 400
 
 
+def test_provider_lives_on_scope(client):
+    r = client.post("/api/nodes", json={"type": "Organization", "name": "acme", "provider": "aws"})
+    assert r.status_code == 400
+    r = client.post("/api/nodes", json={"type": "Scope", "name": "site"})
+    assert r.status_code == 400
+    node(client, "Scope", "site", provider="on-prem")
+
+
 def test_manual_edits_carry_inventory_source(client):
     n = node(client, "ComputeNode", "nas", provider="on-prem", native_id="INV-0042")
     assert [s["importer"] for s in n["sources"]] == ["inventory"]

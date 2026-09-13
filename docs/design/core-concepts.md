@@ -10,7 +10,7 @@
 | **Relationship** (edge) | A typed, directed link between two nodes, e.g. `RUNS_IN`. May carry attributes. |
 | **Provider** | The system hosting the resource: `aws`, `gcp`, `azure`, `kubernetes`, `onprem`, ... |
 | **Provider binding** | Attributes tying a generic node to its real counterpart: provider, native type (`aws:ec2:instance`), native id (ARN, self-link, UID), region, native attribute map. |
-| **Scope** | The administrative container a resource lives in: account, project, subscription, cluster. Scopes are nodes. Region and availability zone are attributes. |
+| **Scope** | The administrative container a resource lives in: account, project, subscription, physical site. A Scope declares the provider; every resource under it belongs to that provider. An Organization has no provider and can hold Scopes on different providers. Region and availability zone are attributes. |
 | **Source** | The importer that asserted a node, edge or attribute, and when it last saw it. Every fact carries its source. |
 | **Origin** | Whether a fact is *declared* (intent, e.g. Terraform) or *observed* (provider's live API). One resource may have both. |
 | **Importer** | Extension that reads an external system and writes nodes and edges into the core in core vocabulary. |

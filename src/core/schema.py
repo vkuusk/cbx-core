@@ -10,14 +10,17 @@ PROVIDERS: dict[str, str] = {
     "gcp": "resource self-link or id",
 }
 
-# type -> meaning and normalized attribute names (values live in Node.attrs)
+# type -> meaning, normalized attribute names (values live in Node.attrs), and whether the
+# type carries a provider binding. Scope declares the provider; everything under a Scope
+# belongs to that provider.
 TYPES: dict[str, dict] = {
     "Organization": {
         "description": "Root of the graph. No provider binding.",
         "attributes": [],
+        "binding": False,
     },
     "Scope": {
-        "description": "Administrative container: cloud account, project, or a physical site.",
+        "description": "Declares a provider: cloud account, project, or a physical site.",
         "attributes": ["environment"],
     },
     "Network": {
@@ -57,6 +60,10 @@ TRIPLES: set[tuple[str, str, str]] = {
 
 def is_provider(name: str | None) -> bool:
     return name is None or name in PROVIDERS
+
+
+def has_binding(type: str) -> bool:
+    return TYPES[type].get("binding", True)
 
 
 def is_type(name: str) -> bool:

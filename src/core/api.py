@@ -41,6 +41,10 @@ async def create_node(request: Request, data: NodeCreate):
         raise HTTPException(status.HTTP_400_BAD_REQUEST, f"unknown type {data.type}")
     if not schema.is_provider(data.provider):
         raise HTTPException(status.HTTP_400_BAD_REQUEST, f"unknown provider {data.provider}")
+    if not schema.has_binding(data.type) and (data.provider or data.native_id):
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, f"{data.type} has no provider binding")
+    if data.type == "Scope" and not data.provider:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Scope requires a provider")
     try:
         return await repo(request).create_node(data)
     except Conflict as e:

@@ -23,6 +23,8 @@ Decisions made so far. Each item is a decision unless marked *pending*.
   for each. `GET /api/schema` serves it as-is; the web UI renders forms from it.
 - Providers: `on-prem`, `aws`, `gcp`. For `on-prem`, `native_id` is the inventory tag (the
   sticker on the device).
+- The provider is chosen on a Scope and inherited by everything under it. Organization has no
+  provider binding; the API rejects one.
 - A write with no explicit `sources` is a manual inventory edit: the core stamps it with
   importer `inventory`, origin `declared`.
 
